@@ -1,21 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { getUserBySession } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server'
+import { query } from '@/lib/db'
+import { getUserBySession } from '@/lib/auth'
+import {
+  vectorizeDream,
+  updatePublicDreamVector,
+  deleteDreamVector
+} from '@/services/vectorService'
+import { Dream } from '@/types'
 
 // Helper function to sanitize symbol types
-const sanitizeSymbolType = (type: string): 'person' | 'place' | 'object' | 'action' => {
-  const lowerType = type.toLowerCase();
-  if (lowerType.includes('person') || lowerType.includes('character') || lowerType.includes('being')) {
-    return 'person';
+const sanitizeSymbolType = (
+  type: string
+): 'person' | 'place' | 'object' | 'action' => {
+  const lowerType = type.toLowerCase()
+  if (
+    lowerType.includes('person') ||
+    lowerType.includes('character') ||
+    lowerType.includes('being')
+  ) {
+    return 'person'
   }
-  if (lowerType.includes('place') || lowerType.includes('location') || lowerType.includes('setting')) {
-    return 'place';
+  if (
+    lowerType.includes('place') ||
+    lowerType.includes('location') ||
+    lowerType.includes('setting')
+  ) {
+    return 'place'
   }
-  if (lowerType.includes('action') || lowerType.includes('activity') || lowerType.includes('event')) {
-    return 'action';
+  if (
+    lowerType.includes('action') ||
+    lowerType.includes('activity') ||
+    lowerType.includes('event')
+  ) {
+    return 'action'
   }
-  return 'object';
-};
+  return 'object'
+}
 
 // PUT update dream
 export async function PUT(
@@ -23,19 +43,19 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const sessionId = request.cookies.get('session')?.value;
+    const sessionId = request.cookies.get('session')?.value
 
     if (!sessionId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await getUserBySession(sessionId);
+    const user = await getUserBySession(sessionId)
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json();
+    const body = await request.json()
     const {
       content,
       mood,
@@ -44,84 +64,85 @@ export async function PUT(
       isPublic,
       realityConnection,
       analysis
-    } = body;
+    } = body
 
     // Build dynamic update query
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
+    const updates: string[] = []
+    const values: any[] = []
+    let paramIndex = 1
 
     if (content !== undefined) {
-      updates.push(`content = $${paramIndex++}`);
-      values.push(content);
+      updates.push(`content = $${paramIndex++}`)
+      values.push(content)
     }
     if (mood !== undefined) {
-      updates.push(`mood = $${paramIndex++}`);
-      values.push(mood);
+      updates.push(`mood = $${paramIndex++}`)
+      values.push(mood)
     }
     if (clarity !== undefined) {
-      updates.push(`clarity = $${paramIndex++}`);
-      values.push(clarity);
+      updates.push(`clarity = $${paramIndex++}`)
+      values.push(clarity)
     }
     if (isRecurring !== undefined) {
-      updates.push(`is_recurring = $${paramIndex++}`);
-      values.push(isRecurring);
+      updates.push(`is_recurring = $${paramIndex++}`)
+      values.push(isRecurring)
     }
     if (isPublic !== undefined) {
-      updates.push(`is_public = $${paramIndex++}`);
-      values.push(isPublic);
+      updates.push(`is_public = $${paramIndex++}`)
+      values.push(isPublic)
     }
     if (realityConnection !== undefined) {
-      updates.push(`reality_connection = $${paramIndex++}`);
-      values.push(realityConnection);
+      updates.push(`reality_connection = $${paramIndex++}`)
+      values.push(realityConnection)
     }
 
     // Always update updated_at
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
-    values.push(params.id);
+    updates.push(`updated_at = CURRENT_TIMESTAMP`)
+    values.push(params.id)
 
-    if (updates.length > 1) { // More than just updated_at
+    if (updates.length > 1) {
+      // More than just updated_at
       await query(
         `UPDATE dreams SET ${updates.join(', ')} WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}`,
         [...values, user.id]
-      );
+      )
     }
 
     // Update analysis if provided
     if (analysis) {
-      const { emotionalAnalysis, creativeStory, themes, symbols } = analysis;
+      const { emotionalAnalysis, creativeStory, themes, symbols } = analysis
 
       // Check if analysis exists
       const existingAnalysis = await query(
         `SELECT id FROM dream_analysis WHERE dream_id = $1`,
         [params.id]
-      );
+      )
 
       if (existingAnalysis.rows.length > 0) {
         // Update existing analysis
-        const analysisUpdates: string[] = [];
-        const analysisValues: any[] = [];
-        let analysisParamIndex = 1;
+        const analysisUpdates: string[] = []
+        const analysisValues: any[] = []
+        let analysisParamIndex = 1
 
         if (emotionalAnalysis !== undefined) {
-          analysisUpdates.push(`emotional_analysis = $${analysisParamIndex++}`);
-          analysisValues.push(emotionalAnalysis);
+          analysisUpdates.push(`emotional_analysis = $${analysisParamIndex++}`)
+          analysisValues.push(emotionalAnalysis)
         }
         if (creativeStory !== undefined) {
-          analysisUpdates.push(`creative_story = $${analysisParamIndex++}`);
-          analysisValues.push(creativeStory);
+          analysisUpdates.push(`creative_story = $${analysisParamIndex++}`)
+          analysisValues.push(creativeStory)
         }
         if (themes !== undefined) {
-          analysisUpdates.push(`themes = $${analysisParamIndex++}`);
-          analysisValues.push(themes);
+          analysisUpdates.push(`themes = $${analysisParamIndex++}`)
+          analysisValues.push(themes)
         }
 
         if (analysisUpdates.length > 0) {
-          analysisValues.push(params.id);
+          analysisValues.push(params.id)
           await query(
             `UPDATE dream_analysis SET ${analysisUpdates.join(', ')} WHERE dream_id = $${analysisParamIndex}`,
             analysisValues
-          );
+          )
         }
       } else {
         // Create new analysis
@@ -129,32 +150,88 @@ export async function PUT(
           `INSERT INTO dream_analysis (dream_id, emotional_analysis, creative_story, themes)
            VALUES ($1, $2, $3, $4)`,
           [params.id, emotionalAnalysis, creativeStory, themes]
-        );
+        )
       }
 
       // Update symbols if provided
       if (symbols !== undefined) {
         // Delete old symbols
-        await query(`DELETE FROM dream_symbols WHERE dream_id = $1`, [params.id]);
+        await query(`DELETE FROM dream_symbols WHERE dream_id = $1`, [
+          params.id
+        ])
 
         // Insert new symbols
         if (symbols.length > 0) {
           for (const symbol of symbols) {
-            const sanitizedType = sanitizeSymbolType(symbol.type);
+            const sanitizedType = sanitizeSymbolType(symbol.type)
             await query(
               `INSERT INTO dream_symbols (dream_id, name, meaning, type)
                VALUES ($1, $2, $3, $4)`,
               [params.id, symbol.name, symbol.meaning, sanitizedType]
-            );
+            )
           }
         }
       }
     }
 
-    return NextResponse.json({ success: true });
+    // Fetch the updated dream for vectorization
+    const updatedDreamResult = await query(
+      `SELECT d.*, da.themes, da.emotional_analysis, da.creative_story,
+       ARRAY_AGG(json_build_object('name', ds.name, 'meaning', ds.meaning, 'type', ds.type))
+       FILTER (WHERE ds.id IS NOT NULL) as symbols
+       FROM dreams d
+       LEFT JOIN dream_analysis da ON d.id = da.dream_id
+       LEFT JOIN dream_symbols ds ON d.id = ds.dream_id
+       WHERE d.id = $1 AND d.user_id = $2
+       GROUP BY d.id, da.themes, da.emotional_analysis, da.creative_story`,
+      [params.id, user.id]
+    )
+
+    if (updatedDreamResult.rows.length > 0) {
+      const row = updatedDreamResult.rows[0]
+      const dreamForVectorization: Dream = {
+        id: row.id,
+        timestamp: parseInt(row.timestamp),
+        content: row.content,
+        mood: row.mood,
+        clarity: row.clarity,
+        isRecurring: row.is_recurring,
+        imageUrl: row.image_url,
+        isPublic: row.is_public,
+        realityConnection: row.reality_connection,
+        analysis: row.themes
+          ? {
+              themes: row.themes || [],
+              emotionalAnalysis: row.emotional_analysis || '',
+              creativeStory: row.creative_story || '',
+              symbols: row.symbols || [],
+              moods: []
+            }
+          : undefined
+      }
+
+      // Re-vectorize the dream with updated content
+      vectorizeDream(dreamForVectorization, user.id).catch((err) => {
+        console.error('Failed to re-vectorize dream:', err)
+      })
+
+      // Update public namespace if isPublic changed
+      if (isPublic !== undefined) {
+        updatePublicDreamVector(dreamForVectorization, user.id, isPublic).catch(
+          (err) => {
+            console.error('Failed to update public dream vector:', err)
+          }
+        )
+      }
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating dream:', error);
-    return NextResponse.json({ error: 'Failed to update dream' }, { status: 500 });
+    console.error('Error updating dream:', error)
+    return NextResponse.json(
+      { error: 'Failed to update dream' },
+      { status: 500 }
+    )
   }
 }
 
@@ -164,23 +241,35 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const sessionId = request.cookies.get('session')?.value;
+    const sessionId = request.cookies.get('session')?.value
 
     if (!sessionId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await getUserBySession(sessionId);
+    const user = await getUserBySession(sessionId)
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Delete dream (CASCADE will delete related records)
-    await query(`DELETE FROM dreams WHERE id = $1 AND user_id = $2`, [params.id, user.id]);
-    return NextResponse.json({ success: true });
+    await query(`DELETE FROM dreams WHERE id = $1 AND user_id = $2`, [
+      params.id,
+      user.id
+    ])
+
+    // Delete from vector database
+    deleteDreamVector(params.id, user.id).catch((err) => {
+      console.error('Failed to delete dream vector:', err)
+    })
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting dream:', error);
-    return NextResponse.json({ error: 'Failed to delete dream' }, { status: 500 });
+    console.error('Error deleting dream:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete dream' },
+      { status: 500 }
+    )
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { Dream, DreamAnalysis } from '@/types';
 import { getUserBySession } from '@/lib/auth';
+import { vectorizeDream, updatePublicDreamVector } from '@/services/vectorService';
 
 // Helper function to sanitize symbol types to match database constraint
 const sanitizeSymbolType = (type: string): 'person' | 'place' | 'object' | 'action' => {
@@ -128,6 +129,31 @@ export async function POST(request: NextRequest) {
           );
         }
       }
+    }
+
+    // Vectorize the dream for semantic search
+    const dreamForVectorization: Dream = {
+      id,
+      timestamp,
+      content,
+      mood,
+      clarity,
+      isRecurring,
+      imageUrl,
+      isPublic: isPublic || false,
+      analysis,
+    };
+
+    // Vectorize asynchronously (don't block the response)
+    vectorizeDream(dreamForVectorization, user.id).catch(err => {
+      console.error('Failed to vectorize dream:', err);
+    });
+
+    // If public, also add to public namespace
+    if (isPublic) {
+      updatePublicDreamVector(dreamForVectorization, user.id, true).catch(err => {
+        console.error('Failed to update public dream vector:', err);
+      });
     }
 
     return NextResponse.json({ success: true, id });

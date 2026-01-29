@@ -100,60 +100,63 @@ export const generateDreamImage = async (
   description: string,
   themes: string[]
 ): Promise<string> => {
-  const apiKey = getApiKey();
+  const apiKey = getApiKey()
 
   if (!apiKey) {
-    console.warn('Doubao API key not configured, using placeholder image');
-    return generatePlaceholderImage(themes);
+    console.warn('Doubao API key not configured, using placeholder image')
+    return generatePlaceholderImage(themes)
   }
 
   try {
     // Create a rich prompt for image generation
-    const imagePrompt = `${description}. 主题: ${themes.join(', ')}. 超现实主义风格，梦幻氛围，深邃色彩，电影质感，光影效果，艺术感`;
+    const imagePrompt = `${description}. 主题: ${themes.join(', ')}. 超现实主义风格，梦幻氛围，深邃色彩，电影质感，光影效果，艺术感`
 
-    const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'doubao-seedream-4-5-251128',
-        prompt: imagePrompt,
-        sequential_image_generation: 'disabled',
-        response_format: 'url',
-        size: '2K',
-        stream: false,
-        watermark: true,
-      }),
-    });
+    const response = await fetch(
+      'https://ark.cn-beijing.volces.com/api/v3/images/generations',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'doubao-seedream-4-5-251128',
+          prompt: imagePrompt,
+          sequential_image_generation: 'disabled',
+          response_format: 'url',
+          size: '2K',
+          stream: false,
+          watermark: true
+        })
+      }
+    )
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Doubao image generation error:', error);
-      return generatePlaceholderImage(themes);
+      const error = await response.text()
+      console.error('Doubao image generation error:', error)
+      return generatePlaceholderImage(themes)
     }
 
-    const data = await response.json();
+    const data = await response.json()
 
     // The API returns an array of images with URLs
     if (data.data && data.data.length > 0 && data.data[0].url) {
-      return data.data[0].url;
+      return data.data[0].url
     }
 
-    console.warn('No image URL in response, using placeholder');
-    return generatePlaceholderImage(themes);
+    console.warn('No image URL in response, using placeholder')
+    return generatePlaceholderImage(themes)
   } catch (error) {
-    console.error('Error generating dream image:', error);
-    return generatePlaceholderImage(themes);
+    console.error('Error generating dream image:', error)
+    return generatePlaceholderImage(themes)
   }
-};
+}
 
 // Helper function to generate placeholder SVG image
 const generatePlaceholderImage = (themes: string[]): string => {
-  const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
-  const color1 = colors[Math.floor(Math.random() * colors.length)];
-  const color2 = colors[Math.floor(Math.random() * colors.length)];
+  const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981']
+  const color1 = colors[Math.floor(Math.random() * colors.length)]
+  const color2 = colors[Math.floor(Math.random() * colors.length)]
 
   // Create a simple SVG gradient as placeholder
   const svg = `
@@ -169,10 +172,10 @@ const generatePlaceholderImage = (themes: string[]): string => {
         ${themes[0] || 'Dream'}
       </text>
     </svg>
-  `;
+  `
 
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
-};
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
 
 // Generate Universe Story
 export const generateUniverseStory = async (
@@ -187,22 +190,25 @@ export const generateUniverseStory = async (
     ${JSON.stringify(dreams)}
 
     Write a beautiful, mystical story (300-500 words) that connects these dreams.
+
+    **IMPORTANT**: Format your response in Markdown with:
+    - Use **bold** for emphasis on key mystical concepts
+    - Use *italics* for dream-like whispers and ethereal descriptions
+    - Use paragraph breaks for better readability
+    - You may use > blockquotes for particularly profound insights
+    - Structure the narrative with natural flow
   `
 
   const messages = [
     {
       role: 'system',
       content:
-        'You are a mystical storyteller who weaves dreams into coherent narratives.'
+        'You are a mystical storyteller who weaves dreams into coherent narratives. Always format your stories in beautiful Markdown.'
     },
     { role: 'user', content: prompt }
   ]
 
-  const response = await callDoubaoAPI(
-    messages,
-    'doubao-seed-1-6-flash-250828',
-    0.9
-  )
+  const response = await callDoubaoAPI(messages, 'doubao-seed-1-8-251228', 0.9)
   return response || 'The weaver is silent...'
 }
 
@@ -213,33 +219,67 @@ export const analyzeSubconsciousPatterns = async (
   if (dreams.length < 3)
     return 'Please record at least 3 dreams to unlock pattern analysis.'
 
+  // Extract detailed information including symbols
   const summary = dreams.map((d) => ({
     date: new Date(d.timestamp).toDateString(),
     mood: d.mood,
-    themes: d.analysis?.themes.join(', '),
+    themes: d.analysis?.themes || [],
+    symbols: d.analysis?.symbols?.map(s => s.name) || [],
     clarity: d.clarity,
-    realityConnection: d.realityConnection
+    realityConnection: d.realityConnection,
+    emotionalTone: d.analysis?.emotionalAnalysis || ''
   }))
 
+  // Extract all unique themes and symbols for pattern analysis
+  const allThemes = dreams.flatMap(d => d.analysis?.themes || [])
+  const allSymbols = dreams.flatMap(d => d.analysis?.symbols?.map(s => s.name) || [])
+  const themeFrequency = allThemes.reduce((acc, theme) => {
+    acc[theme] = (acc[theme] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  const symbolFrequency = allSymbols.reduce((acc, symbol) => {
+    acc[symbol] = (acc[symbol] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
   const prompt = `
-    You are an expert Dream Psychologist. Analyze these dream journal entries to find hidden patterns.
+    You are an expert Dream Psychologist specializing in pattern recognition and symbolic connections.
 
-    Data: ${JSON.stringify(summary)}
+    Analyze these dream journal entries to find hidden patterns and connections:
 
-    Please provide a Markdown formatted report covering:
-    1. **Emotional Triggers**: Connect moods to themes (e.g., "When you feel Anxious, you tend to dream about Water").
-    2. **Pattern Recognition**: Identify recurring symbols or clarity shifts.
-    3. **Global Comparison**: Briefly contrast these themes with common human dream tropes (e.g., "Unlike the common falling dreams, yours focus on...").
-    4. **Reality Check**: Analyze if there's a correlation between the 'realityConnection' notes and dream moods.
+    Dream Data: ${JSON.stringify(summary)}
 
-    Keep it insightful, mystical, but grounded in psychology. Max 300 words.
+    Theme Frequency: ${JSON.stringify(themeFrequency)}
+    Symbol Frequency: ${JSON.stringify(symbolFrequency)}
+
+    Please provide a Markdown formatted report with the following sections:
+
+    ## 🔗 Interconnected Patterns
+    Identify how different themes and symbols connect across dreams. For example:
+    - "Water appears in 3 dreams, always linked with themes of Transformation and Anxiety"
+    - "Flying dreams correlate with periods of high clarity and positive moods"
+
+    ## 💭 Emotional Triggers
+    Connect moods to specific themes and symbols (e.g., "When you feel Anxious, you tend to dream about Water and Confined Spaces").
+
+    ## 🔄 Recurring Motifs
+    Highlight symbols or themes that appear multiple times and explain their potential psychological significance.
+
+    ## 🌍 Global Comparison
+    Briefly contrast these patterns with common human dream archetypes (e.g., "Unlike typical falling dreams representing loss of control, your dreams focus on...").
+
+    ## 🔮 Reality-Dream Bridge
+    Analyze correlations between 'realityConnection' notes and dream patterns. Do certain real-life events trigger specific dream themes?
+
+    Use **bold** for key insights, *italics* for symbolic interpretations, and > blockquotes for profound psychological observations.
+    Keep it insightful, mystical, yet grounded in Jungian and modern dream psychology. Max 400 words.
   `
 
   const messages = [
     {
       role: 'system',
       content:
-        'You are an expert dream psychologist specializing in pattern recognition and subconscious analysis.'
+        'You are an expert dream psychologist specializing in pattern recognition, symbolic connections, and subconscious analysis. You excel at finding meaningful relationships between disparate dream elements.'
     },
     { role: 'user', content: prompt }
   ]

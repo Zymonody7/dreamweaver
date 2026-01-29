@@ -3,6 +3,8 @@ import { query } from './db';
 export async function initDatabase() {
   try {
     // Drop existing tables in correct order (reverse of creation due to foreign keys)
+    await query(`DROP TABLE IF EXISTS pattern_insights CASCADE`);
+    await query(`DROP TABLE IF EXISTS collective_dreams CASCADE`);
     await query(`DROP TABLE IF EXISTS dream_symbols CASCADE`);
     await query(`DROP TABLE IF EXISTS dream_analysis CASCADE`);
     await query(`DROP TABLE IF EXISTS dreams CASCADE`);
@@ -73,6 +75,27 @@ export async function initDatabase() {
       )
     `);
 
+    // Create collective_dreams table
+    await query(`
+      CREATE TABLE collective_dreams (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        story TEXT NOT NULL,
+        dream_ids TEXT[],
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create pattern_insights table
+    await query(`
+      CREATE TABLE pattern_insights (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        analysis TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Create indexes
     await query(`CREATE INDEX idx_dreams_user_id ON dreams(user_id)`);
     await query(`CREATE INDEX idx_dreams_timestamp ON dreams(timestamp)`);
@@ -80,6 +103,9 @@ export async function initDatabase() {
     await query(`CREATE INDEX idx_dream_analysis_dream_id ON dream_analysis(dream_id)`);
     await query(`CREATE INDEX idx_dream_symbols_dream_id ON dream_symbols(dream_id)`);
     await query(`CREATE INDEX idx_sessions_user_id ON sessions(user_id)`);
+    await query(`CREATE INDEX idx_collective_dreams_user_id ON collective_dreams(user_id)`);
+    await query(`CREATE INDEX idx_collective_dreams_created_at ON collective_dreams(created_at)`);
+    await query(`CREATE INDEX idx_pattern_insights_user_id ON pattern_insights(user_id)`);
 
     console.log('Database initialized successfully');
     return { success: true, message: 'All tables created successfully' };
