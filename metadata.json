@@ -1,0 +1,7 @@
+{
+  "name": "DreamWeaver",
+  "description": "An AI-powered dream journal that records, analyzes, visualizes, and interconnects your subconscious experiences using Gemini AI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

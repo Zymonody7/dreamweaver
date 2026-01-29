@@ -1,0 +1,32 @@
+{
+  "name": "dreamweaver",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "next": "^14.2.0",
+    "lucide-react": "^0.563.0",
+    "recharts": "^3.7.0",
+    "d3": "^7.9.0",
+    "react-markdown": "^10.1.0",
+    "pg": "^8.11.3",
+    "@vercel/postgres": "^0.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/pg": "^8.10.9",
+    "typescript": "~5.8.2",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1"
+  }
+}
