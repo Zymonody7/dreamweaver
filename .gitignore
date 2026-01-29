@@ -26,3 +26,15 @@ dist-ssr
 .next/
 .claude/
 .env
+env_vercel
+FEATURES.md
+CLAUDE.md
+
+# Backup files
+*.bak
+*.backup
+*_backup.*
+*.old
+
+# Vercel
+.vercel
