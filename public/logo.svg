@@ -1,0 +1,81 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient circle -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="moonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A78BFA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C084FC;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FCD34D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FBBF24;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="url(#bgGradient)" opacity="0.9"/>
+
+  <!-- Outer ring -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="white" stroke-width="1" opacity="0.2"/>
+
+  <!-- Moon (crescent) -->
+  <g filter="url(#glow)">
+    <circle cx="85" cy="70" r="30" fill="url(#moonGradient)"/>
+    <circle cx="95" cy="70" r="28" fill="#0F172A"/>
+  </g>
+
+  <!-- Stars -->
+  <g filter="url(#glow)">
+    <!-- Star 1 -->
+    <path d="M 140 50 L 142 56 L 148 56 L 143 60 L 145 66 L 140 62 L 135 66 L 137 60 L 132 56 L 138 56 Z"
+          fill="url(#starGradient)"/>
+
+    <!-- Star 2 -->
+    <path d="M 160 80 L 161 84 L 165 84 L 162 87 L 163 91 L 160 88 L 157 91 L 158 87 L 155 84 L 159 84 Z"
+          fill="url(#starGradient)" opacity="0.8"/>
+
+    <!-- Star 3 -->
+    <path d="M 130 100 L 131 103 L 134 103 L 132 105 L 133 108 L 130 106 L 127 108 L 128 105 L 126 103 L 129 103 Z"
+          fill="url(#starGradient)" opacity="0.6"/>
+
+    <!-- Star 4 -->
+    <path d="M 155 120 L 156 122 L 158 122 L 157 124 L 158 126 L 155 125 L 153 126 L 154 124 L 152 122 L 154 122 Z"
+          fill="url(#starGradient)" opacity="0.7"/>
+  </g>
+
+  <!-- Dream threads/weaving pattern -->
+  <g opacity="0.3" stroke="white" stroke-width="1.5" fill="none">
+    <path d="M 60 120 Q 80 110, 100 120 T 140 120" stroke-linecap="round"/>
+    <path d="M 55 130 Q 75 125, 100 130 T 145 130" stroke-linecap="round"/>
+    <path d="M 50 140 Q 75 135, 100 140 T 150 140" stroke-linecap="round"/>
+  </g>
+
+  <!-- Sparkles/magic dust -->
+  <g fill="white" opacity="0.6">
+    <circle cx="70" cy="90" r="1.5"/>
+    <circle cx="120" cy="75" r="1"/>
+    <circle cx="145" cy="95" r="1.5"/>
+    <circle cx="65" cy="110" r="1"/>
+    <circle cx="135" cy="110" r="1.2"/>
+  </g>
+
+  <!-- Center symbol - infinity/dream loop -->
+  <g transform="translate(100, 155)" opacity="0.8">
+    <path d="M -15 0 Q -15 -8, -8 -8 Q 0 -8, 0 0 Q 0 8, 8 8 Q 15 8, 15 0 Q 15 -8, 8 -8 Q 0 -8, 0 0"
+          stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

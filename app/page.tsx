@@ -514,7 +514,10 @@ const UniverseView = ({ dreams }: { dreams: Dream[] }) => {
         const collectiveResponse = await fetch('/api/collective-dreams')
         if (collectiveResponse.ok) {
           const collectiveData = await collectiveResponse.json()
-          if (collectiveData.collectiveDreams && collectiveData.collectiveDreams.length > 0) {
+          if (
+            collectiveData.collectiveDreams &&
+            collectiveData.collectiveDreams.length > 0
+          ) {
             const latest = collectiveData.collectiveDreams[0]
             setLastCollectiveDream(latest)
             setStory(latest.story)
@@ -547,8 +550,8 @@ const UniverseView = ({ dreams }: { dreams: Dream[] }) => {
 
       // Save the collective dream to database
       const dreamIds = [
-        ...dreams.slice(0, 5).map(d => d.id),
-        ...publicDreams.slice(0, 10).map(d => d.id)
+        ...dreams.slice(0, 5).map((d) => d.id),
+        ...publicDreams.slice(0, 10).map((d) => d.id)
       ]
 
       await fetch('/api/collective-dreams', {
@@ -802,7 +805,78 @@ const RecordModal = ({
   const [isPublic, setIsPublic] = useState(false)
   const [recording, setRecording] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
   const recognitionRef = useRef<any>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Dream case examples
+  const dreamCases = [
+    {
+      title: 'The Mysterious Light',
+      content:
+        'I woke up at night and saw the living room light on. I was sure I had turned it off. The house was unnaturally quiet, and I felt that if I walked closer, something would notice me.',
+      mood: 'Anxious',
+      clarity: 4
+    },
+    {
+      title: 'The Waiting Light',
+      content:
+        'I came home very late and saw the living room light on. No one was there, but the light made me feel safe, as if it had been waiting for me.',
+      mood: 'Peaceful',
+      clarity: 4
+    },
+    {
+      title: 'The Forgotten Light',
+      content:
+        "Lying in bed, I couldn't remember whether I had turned off the living room light. I didn't want to get up and check, but I couldn't fall asleep.",
+      mood: 'Confused',
+      clarity: 3
+    }
+  ]
+
+  // Typewriter effect function
+  const typewriterEffect = (text: string, callback?: () => void) => {
+    setIsTyping(true)
+    setContent('')
+    let index = 0
+
+    const type = () => {
+      if (index < text.length) {
+        setContent(text.substring(0, index + 1))
+        index++
+        typingTimeoutRef.current = setTimeout(type, 30) // 30ms per character
+      } else {
+        setIsTyping(false)
+        if (callback) callback()
+      }
+    }
+
+    type()
+  }
+
+  // Handle case selection
+  const handleCaseSelect = (caseData: (typeof dreamCases)[0]) => {
+    // Clear any existing typing animation
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    // Start typewriter effect
+    typewriterEffect(caseData.content, () => {
+      // Set mood and clarity after typing completes
+      setMood(caseData.mood)
+      setClarity(caseData.clarity)
+    })
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const toggleRecord = () => {
     if (recording) {
@@ -853,17 +927,54 @@ const RecordModal = ({
 
         {/* Body */}
         <div className='p-6 overflow-y-auto flex-1 space-y-6'>
+          {/* Dream Case Examples */}
+          <div>
+            <label className='text-sm font-bold text-slate-500 uppercase mb-3 block'>
+              Try Example Dreams
+            </label>
+            <div className='grid grid-cols-1 gap-2'>
+              {dreamCases.map((dreamCase, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleCaseSelect(dreamCase)}
+                  disabled={isTyping}
+                  className='text-left p-3 bg-night-800/50 hover:bg-night-800 border border-white/5 hover:border-mystic-500/30 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group'
+                >
+                  <div className='flex items-center justify-between mb-1'>
+                    <span className='text-sm font-medium text-mystic-400 group-hover:text-mystic-300'>
+                      {dreamCase.title}
+                    </span>
+                    <span className='text-xs text-slate-500 bg-night-950 px-2 py-0.5 rounded'>
+                      {dreamCase.mood}
+                    </span>
+                  </div>
+                  <p className='text-xs text-slate-400 line-clamp-2 leading-relaxed'>
+                    {dreamCase.content}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className='relative'>
             <textarea
               className='w-full h-48 bg-night-950/50 rounded-2xl p-4 text-lg text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-mystic-500/50 resize-none'
               placeholder='I was walking through a forest of crystals...'
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => !isTyping && setContent(e.target.value)}
+              disabled={isTyping}
               autoFocus
             />
+            {/* {isTyping && (
+              <div className='absolute top-4 right-4 flex items-center gap-2 bg-mystic-500/10 border border-mystic-500/30 px-3 py-1.5 rounded-full'>
+                <div className='w-2 h-2 bg-mystic-400 rounded-full animate-pulse'></div>
+                <span className='text-xs text-mystic-400 font-medium'>Typing...</span>
+              </div>
+            )} */}
             <button
               onClick={toggleRecord}
-              className={`absolute bottom-4 right-4 p-3 rounded-full transition-all ${recording ? 'bg-red-500 animate-pulse text-white' : 'bg-night-800 text-mystic-400 hover:bg-mystic-500 hover:text-white'}`}
+              disabled={isTyping}
+              className={`absolute bottom-4 right-4 p-3 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed ${recording ? 'bg-red-500 animate-pulse text-white' : 'bg-night-800 text-mystic-400 hover:bg-mystic-500 hover:text-white'}`}
             >
               {recording ? <MicOff size={20} /> : <Mic size={20} />}
             </button>
@@ -1002,7 +1113,10 @@ const DreamDetail = ({
   // Close export menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+      if (
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(event.target as Node)
+      ) {
         setShowExportMenu(false)
       }
     }
@@ -1145,7 +1259,10 @@ const DreamDetail = ({
             <ChevronLeft size={24} />
           </button>
           <div className='flex gap-3 relative'>
-            <div className='relative' ref={exportMenuRef}>
+            <div
+              className='relative'
+              ref={exportMenuRef}
+            >
               <button
                 onClick={exportDream}
                 className='w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/10 border border-white/10'
@@ -1161,20 +1278,32 @@ const DreamDetail = ({
                     onClick={handleExportPDF}
                     className='w-full px-4 py-3 text-left text-white hover:bg-white/5 transition-colors flex items-center gap-3 border-b border-white/5'
                   >
-                    <FileDown size={16} className='text-mystic-400' />
+                    <FileDown
+                      size={16}
+                      className='text-mystic-400'
+                    />
                     <div>
                       <div className='text-sm font-medium'>Export as PDF</div>
-                      <div className='text-xs text-slate-400'>Page-matching layout</div>
+                      <div className='text-xs text-slate-400'>
+                        Page-matching layout
+                      </div>
                     </div>
                   </button>
                   <button
                     onClick={handleExportMarkdown}
                     className='w-full px-4 py-3 text-left text-white hover:bg-white/5 transition-colors flex items-center gap-3'
                   >
-                    <FileText size={16} className='text-accent-cyan' />
+                    <FileText
+                      size={16}
+                      className='text-accent-cyan'
+                    />
                     <div>
-                      <div className='text-sm font-medium'>Export as Markdown</div>
-                      <div className='text-xs text-slate-400'>Complete data + images</div>
+                      <div className='text-sm font-medium'>
+                        Export as Markdown
+                      </div>
+                      <div className='text-xs text-slate-400'>
+                        Complete data + images
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -1194,7 +1323,10 @@ const DreamDetail = ({
 
       {/* Content Container */}
       <div className='relative z-10 mt-[30vh] md:mt-[40vh] px-4 md:px-0 pb-10 max-w-4xl mx-auto'>
-        <div id='dream-detail-content' className='glass p-6 md:p-10 rounded-3xl min-h-screen'>
+        <div
+          id='dream-detail-content'
+          className='glass p-6 md:p-10 rounded-3xl min-h-screen'
+        >
           <div className='flex flex-col gap-4 mb-8'>
             <div className='flex items-center gap-3'>
               <span className='text-mystic-400 font-mono text-sm uppercase tracking-widest'>

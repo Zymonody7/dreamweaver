@@ -15,7 +15,9 @@ export function getPineconeClient() {
 
 export async function getDreamIndex() {
   const pc = getPineconeClient();
-  // Extract index name from the Pinecone URL
-  // https://dreamweaver-fa987t0.svc.aped-4627-b74a.pinecone.io
-  return pc.Index('dreamweaver');
+  const indexName = process.env.PINECONE_INDEX_NAME || 'dreamweaver';
+
+  console.log('Using Pinecone index:', indexName);
+
+  return pc.Index(indexName);
 }
